@@ -5,12 +5,17 @@ import { arvo, bungee, emilys } from "@/lib/fonts";
 export const metadata: Metadata = {
   title: "Chores",
   description: "Two-kid chore tracker",
-  icons: [
-    { rel: "icon", url: "/icon.svg" },
-    { rel: "apple-touch-icon", url: "/icon-192.png" }
-  ],
   manifest: "/manifest.json",
-  themeColor: "#ff8c1a"
+  themeColor: "#ff8c1a",
+  icons: {
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon.ico" },
+      { url: "/icon.svg", type: "image/svg+xml" }
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }]
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
