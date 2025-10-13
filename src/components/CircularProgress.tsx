@@ -60,11 +60,11 @@ export function CircularProgress({
       />
       {showLabel && (
         label != null ? (
-          <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fill="#fff">
+          <text x="50%" y="50%" textAnchor="middle" dy=".42em" fill="#fff">
             {label}
           </text>
         ) : (
-          <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fill="#fff">
+          <text x="50%" y="50%" textAnchor="middle" dy=".42em" fill="#fff">
             <tspan fontSize={Math.max(12, Math.round(size * 0.30))}>{Math.round(Math.max(0, Math.min(1, display)) * 100)}</tspan>
             <tspan fontSize={Math.max(10, Math.round(size * 0.16))}>%</tspan>
           </text>
