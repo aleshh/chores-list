@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { arvo, bungee, emilys } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   title: "Chores",
@@ -20,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Chores" />
       </head>
-      <body>
+      <body className={`${arvo.className} ${arvo.variable} ${bungee.variable} ${emilys.variable}`}>
         {children}
       </body>
     </html>

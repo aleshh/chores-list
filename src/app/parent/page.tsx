@@ -52,7 +52,7 @@ export default function ParentPage() {
   if (!ok) return (
     <div className="container" style={{ maxWidth: 520 }}>
       <div className="topbar">
-        <a href="/" style={{ color: 'inherit' }}><h1>Chores list</h1></a>
+        <a href="/" style={{ color: 'inherit' }}><h1 className="appTitle">Chores list</h1></a>
         <div className="actions">
           <a className="iconBtn" href="/" title="Close" aria-label="Close"><X color="#fff" size={22} /></a>
         </div>
@@ -180,7 +180,7 @@ function Editor() {
   return (
     <div className="container">
       <div className="topbar">
-        <a href="/" style={{ color: 'inherit' }}><h1>Chores list</h1></a>
+        <a href="/" style={{ color: 'inherit' }}><h1 className="appTitle">Chores list</h1></a>
         <div className="actions">
           <a className="iconBtn" href="/" title="Close" aria-label="Close"><X color="#fff" size={22} /></a>
         </div>
@@ -189,8 +189,8 @@ function Editor() {
       <div className="row">
         {KIDS.map(k => (
           <div key={k.id} className="col">
-            <div className="heading"><div className="big">{k.name}</div></div>
-            <div style={{ marginTop: 10, fontWeight: 700 }}>Daily</div>
+            <div className="heading"><div className="big kidName">{k.name}</div></div>
+            <div style={{ marginTop: 10 }}>Daily</div>
             <div className="list">
               {(byKid[k.id]?.daily ?? []).map(c => (
                 <div key={c.id}
@@ -208,7 +208,7 @@ function Editor() {
               ))}
             </div>
             <button className="btn" style={{ marginTop: 8 }} onClick={() => add(k.id, "daily")}>+ Add daily</button>
-            <div style={{ marginTop: 16, fontWeight: 700 }}>Weekly</div>
+            <div style={{ marginTop: 16 }}>Weekly</div>
             <div className="list">
               {(byKid[k.id]?.weekly ?? []).map(c => (
                 <div key={c.id}

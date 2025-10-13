@@ -109,7 +109,7 @@ function Content() {
   return (
     <div className="container">
       <div className="topbar">
-        <a href="/" style={{ color: 'inherit' }}><h1>Chores list</h1></a>
+        <a href="/" style={{ color: 'inherit' }}><h1 className="appTitle">Chores list</h1></a>
         <div className="actions">
           <a className="iconBtn" href="/" title="Close" aria-label="Close"><X color="#fff" size={22} /></a>
         </div>
@@ -117,11 +117,11 @@ function Content() {
       <p className="muted">Last 8 weeks. Trophy ≥ {Math.round(trophy*100)}%, Apple ≥ {Math.round(apple*100)}%.</p>
       <div className="row" style={{ marginTop: 10 }}>
         <div className="col">
-          <div className="big" style={{ marginBottom: 6 }}>Astrid</div>
+          <div className="big kidName" style={{ marginBottom: 6 }}>Astrid</div>
           {rows.length ? renderTiles(astridPcts) : <div className="muted">No data yet</div>}
         </div>
         <div className="col">
-          <div className="big" style={{ marginBottom: 6 }}>Emilia</div>
+          <div className="big kidName" style={{ marginBottom: 6 }}>Emilia</div>
           {rows.length ? renderTiles(emiliaPcts) : <div className="muted">No data yet</div>}
         </div>
       </div>

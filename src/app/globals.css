@@ -4,7 +4,7 @@ body{
   margin:0;
   background: var(--bg);
   color: var(--fg);
-  font-family: ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+  font-family: var(--font-arvo), ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
 }
 a{ color: inherit; text-decoration: none; }
 *{ box-sizing: border-box; }
@@ -14,27 +14,31 @@ a{ color: inherit; text-decoration: none; }
 .col{ flex:1; background: rgba(0,0,0,0.18); border-radius: 16px; padding: 16px; }
 .heading{ display:flex; align-items:center; justify-content:space-between; gap: 12px; }
 .progressWrap{ display:flex; gap:16px; align-items:center; }
-.big{ font-size: clamp(18px, 4vw, 28px); font-weight: 700; }
+.big{ font-size: clamp(18px, 4vw, 28px); }
+.appTitle{ font-family: var(--font-emilys), cursive; }
+.kidName{ font-family: var(--font-bungee), cursive; letter-spacing: 1px; font-size: clamp(24px, 5vw, 40px); line-height: 1; }
 .muted{ color: var(--muted); }
 .list{ display:flex; flex-direction:column; gap: 8px; margin-top: 12px; }
-.item{ display:flex; align-items:center; justify-content:flex-start; gap: 12px; padding: 12px 12px; border-radius: 12px; background: rgba(0,0,0,0.18); }
+.item{ position: relative; display:flex; align-items:center; justify-content:flex-start; gap: 12px; padding: 12px 12px; border-radius: 12px; background: rgba(0,0,0,0.18); overflow: hidden; }
 .item.done .taskText{ opacity: 0.8; text-decoration: line-through; text-decoration-thickness: 0.18em; text-decoration-color: rgba(255,255,255,0.9); text-decoration-skip-ink: none; text-decoration-offset: 0.08em; }
-.leftIcon{ width: 28px; min-width:28px; display:inline-flex; align-items:center; justify-content:center; }
-.leftIcon.reward{ font-size: calc(var(--task-fs, 24px) * 1.35); line-height: 1; transform: translateX(-2px); }
+.leftIcon{ width: calc(var(--task-fs, 24px) * 1.05); min-width: calc(var(--task-fs, 24px) * 1.05); height: var(--task-fs, 24px); display:inline-flex; align-items:center; justify-content:center; overflow: visible; }
+.leftIcon.reward{ font-size: var(--task-fs, 24px); line-height: 1; transform: scale(1.32) translateY(-1px); }
 .taskText{ font-size: var(--task-fs, 24px); }
 .item.dragOver{ outline: 2px dashed rgba(255,255,255,0.85); background: rgba(0,0,0,0.3); }
 
-/* Sweep sparkle and strike animation */
+/* Strike animation + sparkle overlay (Sparkle is positioned in .textWrap) */
 .textWrap{ position: relative; display: inline-block; }
-.item.striking .textWrap::after{ content: ""; position:absolute; left:0; top: 55%; height: 0.18em; background: rgba(255,255,255,0.98); border-radius: 2px; width: 0; animation: strike-grow 950ms cubic-bezier(.2,.9,.2,1) forwards; }
+.item.striking .textWrap::after{ content: ""; position:absolute; left:0; top: 55%; height: 0.18em; background: rgba(255,255,255,0.98); border-radius: 2px; width: 0; animation: strike-grow 950ms cubic-bezier(.2,.9,.2,1) 500ms forwards; }
 @keyframes strike-grow{ from{ width:0; } to{ width: 100%; } }
-.sweep{ position:absolute; inset:0; pointer-events:none; }
-.sweep .spark{ position:absolute; top: 50%; transform: translate(-12px, -50%); animation: sweep 1100ms ease forwards; font-size: calc(var(--task-fs,24px) * 1.2); filter: drop-shadow(0 1px 0 rgba(255,255,255,0.7)); }
-.sweep .spark.s2{ top: 35%; animation-delay: 80ms; }
-.sweep .spark.s3{ top: 65%; animation-delay: 160ms; }
-.sweep .spark.s4{ top: 20%; animation-delay: 220ms; }
-@keyframes sweep{ 0%{ left: -12px; opacity: .15; } 30%{ opacity:1; } 100%{ left: calc(100% + 12px); opacity: 0; } }
-.btn{ cursor:pointer; border:0; border-radius:12px; padding:10px 14px; background:#ffffff; color:#333; font-weight:600; }
+
+/* Left-to-right sparkle sweep using react-sparkle within moving bands */
+.sparkle-sweep{ position:absolute; inset:0; pointer-events:none; overflow:visible; z-index: 1; }
+.sparkle-band{ position:absolute; top:-8px; bottom:-8px; width: 55%; overflow:hidden; transform: translateX(-110%); animation: sweep-ltr 1400ms ease-out forwards; }
+.sparkle-band.delay1{ animation-delay: 140ms; }
+.sparkle-band.delay2{ animation-delay: 280ms; }
+.sparkle-band.delay3{ animation-delay: 420ms; }
+@keyframes sweep-ltr{ from{ transform: translateX(-110%); } to{ transform: translateX(110%); } }
+.btn{ cursor:pointer; border:0; border-radius:12px; padding:10px 14px; background:#ffffff; color:#333; }
 .btn.secondary{ background: rgba(255,255,255,0.2); color: #fff; }
 .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 

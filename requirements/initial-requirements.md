@@ -12,7 +12,7 @@ Screens
   - Progress rings should animate smoothly when values change (e.g., ease-out over ~700ms), respecting reduced-motion preferences.
   - Dynamic font sizing so all tasks fit on the screen without scrolling; both kids use the same font size.
   - Each task has a Lucide checkbox indicator (left of text). When completed:
-    - Animate sparkles sweeping left→right across the task text as it gets crossed off; animation should be pronounced and slightly slower for delight.
+    - Animate sparkles moving in a left→right sweep across the entire chore row; use the `react-sparkle` library in successive moving bands during the completion state. The final band fades more slowly; the text strike happens just before that final pass.
     - Show a Lucide checkmark briefly, then fade into a random “reward” emoji where the checkbox was. Emoji selection is random each day.
     - Reward emojis are large and can overflow their container slightly, and are not struck through when the text is completed.
   - When a child’s weekly total reaches 100% (all daily chores done every day plus all weekly chores done once), trigger a one-time confetti drop for that week and show a trophy in place of the weekly ring.
@@ -56,6 +56,13 @@ Design & PWA
   - Home: app title (left) + calendar and gear icons (right) for navigating to Progress and Parent.
   - Progress and Parent: app title (left) + a single Close (X) button (right) that returns to Home.
 - Card styling: rounded chore items and columns use a slightly darker overlay on the orange background (not lighter) to improve contrast.
+
+Typography
+
+- Use Google Fonts via Next.js:
+  - Title (“Chores list”): Emilys Candy
+  - Kid names: Bungee Shade
+  - Body/UI: Arvo
 
 Developer mode data
 

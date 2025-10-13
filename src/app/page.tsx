@@ -7,6 +7,7 @@ import { Confetti } from "@/components/Confetti";
 import { endOfToday, endOfWeek, startOfToday, startOfWeek, weekKey } from "@/lib/dates";
 import { randomReward } from "@/lib/rewards";
 import { Calendar, Settings, Circle, Check } from "lucide-react";
+import Sparkle from "react-sparkle";
 
 type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number };
 
@@ -208,7 +209,7 @@ function HomeContent() {
       // show checkmark briefly then fade to emoji
       const recentKey = `${chore.id}_${isDaily?"d":"w"}`;
       setRecent(r => ({ ...r, [recentKey]: true }));
-      setTimeout(() => setRecent(r => ({ ...r, [recentKey]: false })), 1000);
+      setTimeout(() => setRecent(r => ({ ...r, [recentKey]: false })), 1600);
     }
     } catch (e: any) { setWriteError(e?.message || String(e)); }
   }
@@ -219,7 +220,7 @@ function HomeContent() {
   return (
     <div className="container" ref={containerRef}>
       <div className="topbar">
-        <a href="/" style={{ color: 'inherit' }}><h1>Chores list</h1></a>
+        <a href="/" style={{ color: 'inherit' }}><h1 className="appTitle">Chores list</h1></a>
         <div className="actions">
           <a className="iconBtn" href="/progress" title="Weekly status" aria-label="Weekly status"><Calendar color="#fff" size={22} /></a>
           <a className="iconBtn" href="/parent" title="Parent settings" aria-label="Parent settings"><Settings color="#fff" size={22} /></a>
@@ -233,7 +234,7 @@ function HomeContent() {
           return (
             <div key={k.id} className="col">
               <div className="heading">
-                <div className="big">{k.name}</div>
+                <div className="big kidName">{k.name}</div>
                 <div className="progressWrap">
                   <CircularProgress size={84} value={sum.dayPct} />
                   {weeklyDone ? (
@@ -244,7 +245,7 @@ function HomeContent() {
                 </div>
               </div>
 
-              <div style={{ marginTop: 8, fontWeight: 700 }}>Daily</div>
+              <div style={{ marginTop: 8 }}>Daily</div>
               <div className="list">
                 {kidChores.daily.map(c => {
                   const done = !!todayMap[c.id];
@@ -263,21 +264,30 @@ function HomeContent() {
                       </span>
                       <span className="taskText textWrap">
                         {c.title}
-                        {recent[rkey] && (
-                          <span className="sweep" aria-hidden>
-                            <span className="spark">✨</span>
-                            <span className="spark s2">✨</span>
-                            <span className="spark s3">✨</span>
-                          </span>
-                        )}
                       </span>
+                      {recent[rkey] && (
+                        <span className="sparkle-sweep" aria-hidden>
+                          <span className="sparkle-band">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={45} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay1">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={45} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay2">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={40} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay3">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={36} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={40} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                        </span>
+                      )}
                     </button>
                   );
                 })}
                 {kidChores.daily.length === 0 && <div className="muted">No daily chores yet</div>}
               </div>
 
-              <div style={{ marginTop: 14, fontWeight: 700 }}>Weekly</div>
+              <div style={{ marginTop: 14 }}>Weekly</div>
               <div className="list">
                 {kidChores.weekly.map(c => {
                   const done = weekRows.some(r=>r.chore_id===c.id);
@@ -296,15 +306,23 @@ function HomeContent() {
                       </span>
                       <span className="taskText textWrap">
                         {c.title}
-                        {recent[rkey] && (
-                          <span className="sweep" aria-hidden>
-                            <span className="spark">✨</span>
-                            <span className="spark s2">✨</span>
-                            <span className="spark s3">✨</span>
-                            <span className="spark s4">✨</span>
-                          </span>
-                        )}
                       </span>
+                      {recent[rkey] && (
+                        <span className="sparkle-sweep" aria-hidden>
+                          <span className="sparkle-band">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={45} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay1">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={45} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay2">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={40} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay3">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={36} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={40} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                        </span>
+                      )}
                     </button>
                   );
                 })}
