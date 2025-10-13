@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { data } from "@/lib/data";
 import { AuthGate } from "@/components/AuthGate";
-import { endOfWeek, startOfWeek, weekNumber } from "@/lib/dates";
+import { endOfWeek, startOfWeek } from "@/lib/dates";
+import { X } from "lucide-react";
 
 type Chore = { id: string; type: "daily" | "weekly"; child_id: string; title: string };
 const KIDS = [
@@ -10,7 +11,7 @@ const KIDS = [
   { id: "emilia", name: "Emilia" }
 ] as const;
 
-type WeekRow = { weekStart: Date; label: string; pctByKid: Record<string, number> };
+type WeekRow = { weekStart: Date; weekEnd: Date; pctByKid: Record<string, number> };
 
 export default function ProgressPage() {
   return (
@@ -38,8 +39,8 @@ function Content() {
       for (let i = 1; i <= 8; i++) {
         const ws = new Date(startOfWeek(end));
         ws.setDate(ws.getDate() - i * 7);
-        const label = `${ws.getMonth() + 1}/${ws.getDate()} (W${weekNumber(ws)})`;
-        weeks.push({ weekStart: ws, label, pctByKid: {} as any });
+        const we = endOfWeek(ws);
+        weeks.push({ weekStart: ws, weekEnd: we, pctByKid: {} as any });
       }
       const earliest = weeks[weeks.length - 1].weekStart;
       const allCheckoffs = await data.getCheckoffsInRange(earliest, end);
@@ -57,15 +58,24 @@ function Content() {
               const d = new Date(r.done_at);
               return d >= start && d <= endW;
             });
-            const weekDaily = new Set<string>();
-            const weekWeekly = new Set<string>();
-            for (const r of weekRows) {
-              const chore = kidChores.find(c => c.id === r.chore_id);
-              if (!chore) continue;
-              if (chore.type === "daily") weekDaily.add(chore.id);
-              else weekWeekly.add(chore.id);
+            let dailyNumer = 0;
+            for (const c of daily) {
+              const days = new Set<number>();
+              for (const r of weekRows) {
+                if (r.chore_id !== c.id) continue;
+                const d = new Date(r.done_at);
+                const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+                const idx = Math.floor((dStart.getTime() - new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()) / 86400000);
+                if (idx >= 0 && idx < 7) days.add(idx);
+              }
+              dailyNumer += Math.min(7, days.size);
             }
-            const numer = weekDaily.size + weekWeekly.size * 2;
+            let weeklyNumer = 0;
+            for (const c of weekly) {
+              const any = weekRows.some((r: any) => r.chore_id === c.id);
+              if (any) weeklyNumer += 2;
+            }
+            const numer = dailyNumer + weeklyNumer;
             pctByKid[kid.id] = denom === 0 ? 0 : numer / denom;
           }
           return { ...w, pctByKid };
@@ -75,31 +85,45 @@ function Content() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const grid = useMemo(() => rows.map(r => ({
-    label: r.label,
-    astrid: r.pctByKid["astrid"] ?? 0,
-    emilia: r.pctByKid["emilia"] ?? 0
-  })), [rows]);
-
-  function badge(p: number) {
-    if (p >= trophy) return "🏆";
-    if (p >= apple) return "🍎";
-    return "";
+  function renderTiles(pcts: number[]) {
+    return (
+      <div className="tilesRow">
+        {pcts.map((p, idx) => (
+          <div key={idx} className="tile">
+            <div className={`score ${p>=trophy? 'big':''}`}>{p>=trophy? '🏆' : p>=apple? '🍎' : `${Math.round(p*100)}%`}</div>
+            <div className="date">{formatRange(rows[idx].weekStart, rows[idx].weekEnd)}</div>
+          </div>
+        ))}
+      </div>
+    );
   }
+
+  function formatRange(a: Date, b: Date) {
+    const f = (d: Date) => `${d.getMonth()+1}/${d.getDate()}`;
+    return `${f(a)}–${f(b)}`;
+  }
+
+  const astridPcts = rows.map(r => r.pctByKid["astrid"] ?? 0);
+  const emiliaPcts = rows.map(r => r.pctByKid["emilia"] ?? 0);
 
   return (
     <div className="container">
-      <h1 className="big">Weekly Progress</h1>
+      <div className="topbar">
+        <a href="/" style={{ color: 'inherit' }}><h1>Chores list</h1></a>
+        <div className="actions">
+          <a className="iconBtn" href="/" title="Close" aria-label="Close"><X color="#fff" size={22} /></a>
+        </div>
+      </div>
       <p className="muted">Last 8 weeks. Trophy ≥ {Math.round(trophy*100)}%, Apple ≥ {Math.round(apple*100)}%.</p>
-      <div className="grid" style={{ marginTop: 12 }}>
-        {grid.map((g, i) => (
-          <div key={i} className="item" style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 10 }}>
-            <div>{g.label}</div>
-            <div title={`${Math.round(g.astrid*100)}%`}>Astrid {badge(g.astrid)}</div>
-            <div title={`${Math.round(g.emilia*100)}%`}>Emilia {badge(g.emilia)}</div>
-          </div>
-        ))}
-        {grid.length === 0 && <div className="muted">No data yet</div>}
+      <div className="row" style={{ marginTop: 10 }}>
+        <div className="col">
+          <div className="big" style={{ marginBottom: 6 }}>Astrid</div>
+          {rows.length ? renderTiles(astridPcts) : <div className="muted">No data yet</div>}
+        </div>
+        <div className="col">
+          <div className="big" style={{ marginBottom: 6 }}>Emilia</div>
+          {rows.length ? renderTiles(emiliaPcts) : <div className="muted">No data yet</div>}
+        </div>
       </div>
     </div>
   );

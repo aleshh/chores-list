@@ -15,8 +15,70 @@ function writeLS<T>(key: string, value: T) { if (typeof window === "undefined") 
 
 const KEYS = { chores: "chores", checkoffs: "checkoffs", settings: "settings" } as const;
 
+async function seedIfNeeded() {
+  if (typeof window === 'undefined') return;
+  const seeded = localStorage.getItem('seeded_v1');
+  if (seeded) return;
+  const chores: Chore[] = [];
+  function add(title: string, type: 'daily'|'weekly', child_id: string, position: number) {
+    chores.push({ id: uuid(), title, type, child_id, position, active: true });
+  }
+  // Astrid
+  add('Brush teeth', 'daily', 'astrid', 1);
+  add('Make bed', 'daily', 'astrid', 2);
+  add('Feed cat', 'daily', 'astrid', 3);
+  add('Room tidy', 'weekly', 'astrid', 1);
+  add('Laundry help', 'weekly', 'astrid', 2);
+  // Emilia
+  add('Brush teeth', 'daily', 'emilia', 1);
+  add('Make bed', 'daily', 'emilia', 2);
+  add('Water plants', 'daily', 'emilia', 3);
+  add('Vacuum', 'weekly', 'emilia', 1);
+  add('Recycling', 'weekly', 'emilia', 2);
+  writeLS(KEYS.chores, chores);
+
+  const checkoffs: Checkoff[] = [];
+  const now = new Date();
+  const endOfThisWeek = new Date(now);
+  // get Sunday of current week
+  const day = endOfThisWeek.getDay(); // 0 Sun
+  const diffToSunday = 7 - (day === 0 ? 7 : day);
+  endOfThisWeek.setDate(endOfThisWeek.getDate() + diffToSunday);
+  endOfThisWeek.setHours(23,59,59,999);
+  function startOfWeekFor(d: Date) { const c = new Date(d); const wd = c.getDay(); const diffToMon = (wd === 0 ? -6 : 1) - wd; c.setDate(c.getDate()+diffToMon); c.setHours(0,0,0,0); return c; }
+  const startThisWeek = startOfWeekFor(now);
+  const kids = ['astrid','emilia'];
+  const byKid: Record<string, { daily: Chore[]; weekly: Chore[] }> = { astrid: { daily: [], weekly: []}, emilia: { daily: [], weekly: []}};
+  for (const c of chores) (byKid as any)[c.child_id][c.type].push(c);
+  for (let i = 1; i <= 8; i++) {
+    const ws = new Date(startThisWeek); ws.setDate(ws.getDate() - i*7);
+    for (const kid of kids) {
+      const daily = byKid[kid].daily; const weekly = byKid[kid].weekly;
+      const mode = i % 3; // vary 0: full, 1: ~90%, 2: ~70%
+      for (let d = 0; d < 7; d++) {
+        const dayDate = new Date(ws); dayDate.setDate(ws.getDate() + d); dayDate.setHours(10,0,0,0);
+        for (const c of daily) {
+          if (mode === 0 || (mode === 1 && d !== 0) || (mode === 2 && d % 2 === 0)) {
+            checkoffs.push({ id: uuid(), chore_id: c.id, done_at: dayDate.toISOString() });
+          }
+        }
+      }
+      for (const c of weekly) {
+        if (mode !== 2 || weekly.indexOf(c) === 0) {
+          const wd = new Date(ws); wd.setDate(ws.getDate() + 2); wd.setHours(12,0,0,0);
+          checkoffs.push({ id: uuid(), chore_id: c.id, done_at: wd.toISOString() });
+        }
+      }
+    }
+  }
+  writeLS(KEYS.checkoffs, checkoffs);
+  writeLS(KEYS.settings, { trophy_threshold: 0.95, apple_threshold: 0.85 });
+  localStorage.setItem('seeded_v1','1');
+}
+
 const Local = {
   async getActiveChores(): Promise<Chore[]> {
+    await seedIfNeeded();
     const all = readLS<Chore[]>(KEYS.chores, []);
     return all.filter(c => c.active !== false).sort((a,b) => a.position - b.position);
   },
@@ -132,4 +194,3 @@ const Remote = {
 const Provider = MODE === "local" ? Local : Remote;
 
 export const data = Provider;
-

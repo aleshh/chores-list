@@ -21,14 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="Chores" />
       </head>
       <body>
-        <nav className="container">
-          <a href="/">Home</a>
-          <a href="/progress">Progress</a>
-          <a href="/parent">Parent</a>
-        </nav>
         {children}
       </body>
     </html>
   );
 }
-
