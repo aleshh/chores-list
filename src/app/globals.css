@@ -15,8 +15,8 @@ a{ color: inherit; text-decoration: none; }
 .heading{ display:flex; align-items:center; justify-content:space-between; gap: 12px; }
 .progressWrap{ display:flex; gap:16px; align-items:center; }
 .big{ font-size: clamp(18px, 4vw, 28px); }
-.appTitle{ font-family: var(--font-emilys), cursive; }
-.kidName{ font-family: var(--font-bungee), cursive; letter-spacing: 1px; font-size: clamp(24px, 5vw, 40px); line-height: 1; }
+.appTitle{ font-family: var(--font-bungee), cursive; }
+.kidName{ font-family: var(--font-emilys), cursive; letter-spacing: 1px; font-size: clamp(24px, 5vw, 40px); line-height: 1; }
 .muted{ color: var(--muted); }
 .list{ display:flex; flex-direction:column; gap: 8px; margin-top: 12px; }
 .item{ position: relative; display:flex; align-items:center; justify-content:flex-start; gap: 12px; padding: 12px 12px; border-radius: 12px; background: rgba(0,0,0,0.18); overflow: hidden; }

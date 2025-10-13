@@ -60,8 +60,8 @@ Design & PWA
 Typography
 
 - Use Google Fonts via Next.js:
-  - Title (“Chores list”): Emilys Candy
-  - Kid names: Bungee Shade
+  - Title (“Chores list”): Bungee Shade
+  - Kid names: Emilys Candy
   - Body/UI: Arvo
 
 Developer mode data
