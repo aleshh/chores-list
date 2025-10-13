@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import { arvo } from "@/lib/fonts";
 
 export function CircularProgress({
   size = 80,
@@ -44,6 +45,25 @@ export function CircularProgress({
   }, [clampedTarget, duration, prefersReducedMotion]);
 
   const dash = c * Math.max(0, Math.min(1, display));
+  const textRef = useRef<SVGTextElement | null>(null);
+  const sampleRef = useRef<SVGTextElement | null>(null);
+  const [offsetY, setOffsetY] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = sampleRef.current || textRef.current;
+      if (!el) return;
+      try {
+        const box = el.getBBox();
+        setOffsetY(-(box.y + box.height / 2));
+      } catch {}
+    };
+    // measure now
+    measure();
+    // re-measure after fonts are ready (Safari)
+    const fonts = (document as any).fonts;
+    if (fonts?.ready) fonts.ready.then(measure).catch(() => {});
+  }, [size, showLabel, Boolean(label)]);
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.2)" strokeWidth={stroke} fill="none" />
@@ -59,16 +79,48 @@ export function CircularProgress({
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
       {showLabel && (
-        label != null ? (
-          <text x="50%" y="50%" textAnchor="middle" dy=".42em" fill="#fff">
-            {label}
+        <g transform={`translate(${size / 2}, ${size / 2})`}>
+          {/* Hidden sample used to compute exact vertical center once; avoids flicker during animation */}
+          <text
+            ref={sampleRef}
+            x={0}
+            y={0}
+            opacity={0}
+            textAnchor="middle"
+            className={arvo.className}
+            style={{ lineHeight: 1 }}
+          >
+            {label != null ? (
+              // Use a representative sample for custom labels
+              'Ab'
+            ) : (
+              <>
+                <tspan fontSize={Math.max(12, Math.round(size * 0.30))}>100</tspan>
+                <tspan fontSize={Math.max(10, Math.round(size * 0.16))}>%</tspan>
+              </>
+            )}
           </text>
-        ) : (
-          <text x="50%" y="50%" textAnchor="middle" dy=".42em" fill="#fff">
-            <tspan fontSize={Math.max(12, Math.round(size * 0.30))}>{Math.round(Math.max(0, Math.min(1, display)) * 100)}</tspan>
-            <tspan fontSize={Math.max(10, Math.round(size * 0.16))}>%</tspan>
+          <text
+            ref={textRef}
+            x={0}
+            y={offsetY}
+            textAnchor="middle"
+            className={arvo.className}
+            style={{ lineHeight: 1 }}
+            fill="#fff"
+          >
+            {label != null ? (
+              label
+            ) : (
+              <>
+                <tspan fontSize={Math.max(12, Math.round(size * 0.30))}>
+                  {Math.round(Math.max(0, Math.min(1, display)) * 100)}
+                </tspan>
+                <tspan fontSize={Math.max(10, Math.round(size * 0.16))}>%</tspan>
+              </>
+            )}
           </text>
-        )
+        </g>
       )}
     </svg>
   );
