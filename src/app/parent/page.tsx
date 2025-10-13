@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { data } from "@/lib/data";
 import { X } from "lucide-react";
+import { BUILD } from "@/lib/build";
 
 // Always require PIN entry per visit
 
@@ -80,6 +81,7 @@ export default function ParentPage() {
         <button className="btn" type="submit" disabled={submitting}>Enter</button>
       </form>
       {error && <div style={{ marginTop: 8, color: "#fff" }}>{error}</div>}
+      <p className="muted" style={{ marginTop: 8 }}>Build {BUILD}</p>
     </div>
   );
   return <Editor />;
@@ -186,6 +188,7 @@ function Editor() {
         </div>
       </div>
       <h2 className="big">Edit Chores</h2>
+      <p className="muted" style={{ marginTop: 0 }}>Build {BUILD}</p>
       <div className="row">
         {KIDS.map(k => (
           <div key={k.id} className="col">
