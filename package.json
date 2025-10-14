@@ -19,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^20.12.12",
     "@types/react": "^18.2.66",
+    "@types/sortablejs": "^1.15.7",
     "typescript": "^5.5.3"
   }
 }
