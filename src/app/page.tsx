@@ -7,11 +7,6 @@ import { Confetti } from "@/components/Confetti";
 import { endOfToday, endOfWeek, startOfToday, startOfWeek, weekKey } from "@/lib/dates";
 import { randomReward } from "@/lib/rewards";
 import { Calendar, Settings, Circle, Check } from "lucide-react";
-// Show version from package.json next to title
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import pkg from "../../package.json";
-const APP_VERSION: string = (pkg as any).version || "";
 import Sparkle from "react-sparkle";
 
 type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number };
@@ -220,10 +215,7 @@ function HomeContent() {
   return (
     <div className="container" ref={containerRef}>
       <div className="topbar">
-        <a href="/" style={{ color: 'inherit', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <h1 className="appTitle">Chores list</h1>
-          {APP_VERSION && <span className="muted" style={{ fontSize: 14 }}>v{APP_VERSION}</span>}
-        </a>
+        <a href="/" style={{ color: 'inherit' }}><h1 className="appTitle">Chores list</h1></a>
         <div className="actions">
           <a className="iconBtn" href="/progress" title="Weekly status" aria-label="Weekly status"><Calendar color="#fff" size={22} /></a>
           <a className="iconBtn" href="/parent" title="Parent settings" aria-label="Parent settings"><Settings color="#fff" size={22} /></a>

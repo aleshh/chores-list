@@ -10,7 +10,6 @@ Screens
   - Shows Astrid and Emilia side-by-side. Daily chores above; Weekly chores below.
   - At top, show two circular progress indicators per child: left is today’s completion percent; right is weekly completion percent.
   - Progress rings should animate smoothly when values change (e.g., ease-out over ~700ms), respecting reduced-motion preferences.
-  - Show the current app version (from `package.json`) next to the “Chores list” title.
   - Dynamic font sizing so all tasks fit on the screen without scrolling; both kids use the same font size.
   - Each task has a Lucide checkbox indicator (left of text). When completed:
     - Animate sparkles moving in a left→right sweep across the entire chore row; use the `react-sparkle` library in successive moving bands during the completion state. The final band fades more slowly; the text strike happens just before that final pass.

@@ -33,21 +33,27 @@ function Content() {
       setChores(ch as any);
       const s = await data.getSettings();
       if (s) { setTrophy(s.trophy_threshold ?? 0.95); setApple(s.apple_threshold ?? 0.85); }
-      // last 8 weeks
+
       const end = endOfWeek(new Date());
-      const weeks: WeekRow[] = [];
-      for (let i = 1; i <= 8; i++) {
-        const ws = new Date(startOfWeek(end));
-        ws.setDate(ws.getDate() - i * 7);
-        const we = endOfWeek(ws);
-        weeks.push({ weekStart: ws, weekEnd: we, pctByKid: {} as any });
-      }
-      const earliest = weeks[weeks.length - 1].weekStart;
-      const allCheckoffs = await data.getCheckoffsInRange(earliest, end);
+      // Fetch a reasonable historical window (e.g., past 26 weeks) then filter to weeks with data
+      const windowStart = new Date(startOfWeek(end));
+      windowStart.setDate(windowStart.getDate() - 26 * 7);
+      const allCheckoffs = await data.getCheckoffsInRange(windowStart, end);
+
+      // Build list of unique weeks that have any checkoffs
+      const weekMap = new Map<number, { ws: Date; we: Date }>();
+      (allCheckoffs || []).forEach((r: any) => {
+        const ws = startOfWeek(new Date(r.done_at));
+        const key = +ws;
+        if (!weekMap.has(key)) weekMap.set(key, { ws, we: endOfWeek(ws) });
+      });
+      // Sort by most recent first and take last 8 with data
+      const weekList = Array.from(weekMap.values()).sort((a, b) => +b.ws - +a.ws).slice(0, 8);
+
       setRows(() => {
-        return weeks.map(w => {
-          const start = startOfWeek(w.weekStart);
-          const endW = endOfWeek(w.weekStart);
+        return weekList.map(w => {
+          const start = w.ws;
+          const endW = w.we;
           const pctByKid: Record<string, number> = {} as any;
           for (const kid of KIDS) {
             const kidChores = ch.filter(c => c.child_id === kid.id);
@@ -78,7 +84,7 @@ function Content() {
             const numer = dailyNumer + weeklyNumer;
             pctByKid[kid.id] = denom === 0 ? 0 : numer / denom;
           }
-          return { ...w, pctByKid };
+          return { weekStart: w.ws, weekEnd: w.we, pctByKid };
         });
       });
     })();
