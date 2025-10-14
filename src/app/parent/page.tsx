@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { data } from "@/lib/data";
 import { X } from "lucide-react";
+import Sortable from "sortablejs";
 const BUILD_STR = (process.env.NEXT_PUBLIC_BUILD as string) || ((process.env.NEXT_PUBLIC_COMMIT as string)?.slice(0,7) || 'dev');
 
 // Always require PIN entry per visit
@@ -92,8 +93,8 @@ function Editor() {
   const [trophy, setTrophy] = useState(0.95);
   const [apple, setApple] = useState(0.85);
   const [status, setStatus] = useState<string | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const listsRef = useRef<Record<string, HTMLElement | null>>({});
+  const sortables = useRef<Record<string, Sortable | null>>({});
 
   const byKid = useMemo(() => {
     const map: Record<string, { daily: Chore[]; weekly: Chore[] }> = {} as any;
@@ -118,33 +119,43 @@ function Editor() {
 
   useEffect(() => { load(); }, []);
 
-  function reorderLocal(kid: string, type: "daily"|"weekly", sourceId: string, targetId: string) {
+  function applyNewOrder(kid: string, type: "daily"|"weekly", orderedIds: string[]) {
     const list = chores.filter(c => c.child_id === kid && c.type === type).sort((a,b)=>a.position-b.position);
-    const srcIndex = list.findIndex(c => c.id === sourceId);
-    const tgtIndex = list.findIndex(c => c.id === targetId);
-    if (srcIndex < 0 || tgtIndex < 0) return list;
-    const [moved] = list.splice(srcIndex, 1);
-    list.splice(tgtIndex, 0, moved);
-    // reassign positions starting at 1
-    const updates = list.map((c, idx) => ({ ...c, position: idx + 1 }));
-    // reflect in state
-    setChores(prev => {
-      // update positions for affected group
-      const replaced = prev.map(c => c.child_id===kid && c.type===type ? (updates.find(u=>u.id===c.id) || c) : c);
-      // also keep array order aligned with positions so UI reflects immediately
-      const others = replaced.filter(c => !(c.child_id===kid && c.type===type));
-      const group = replaced.filter(c => c.child_id===kid && c.type===type).sort((a,b)=>a.position-b.position);
-      return [...others, ...group];
-    });
-    // persist sequentially
+    const idToChore = new Map(list.map(c => [c.id, c] as const));
+    const newList = orderedIds.map((id, idx) => ({ ...(idToChore.get(id) as any), position: idx + 1 }));
+    setChores(prev => prev.map(c => (c.child_id===kid && c.type===type) ? (newList.find(n=>n.id===c.id) || c) : c));
     (async () => {
-      for (const u of updates) {
+      for (const u of newList) {
         try { await data.updateChore(u.id, { position: u.position }); } catch {}
       }
       setStatus("Order saved");
     })();
-    return updates;
   }
+
+  useEffect(() => {
+    // Initialize Sortable on each list container; supports touch (iPad) and mouse
+    const keys = Object.keys(listsRef.current);
+    for (const key of keys) {
+      const el = listsRef.current[key];
+      if (!el || sortables.current[key]) continue;
+      const [kid, type] = key.split("::");
+      sortables.current[key] = Sortable.create(el, {
+        animation: 120,
+        ghostClass: "dragOver",
+        handle: undefined,
+        onEnd: () => {
+          const ids = Array.from(el.children).map((ch: any) => ch?.dataset?.id).filter(Boolean) as string[];
+          applyNewOrder(kid, type as any, ids);
+        }
+      });
+    }
+    return () => {
+      for (const key of Object.keys(sortables.current)) {
+        sortables.current[key]?.destroy();
+        sortables.current[key] = null;
+      }
+    };
+  }, [byKid]);
 
   async function add(kid: string, type: "daily" | "weekly") {
     const title = prompt("Chore title?");
@@ -194,16 +205,10 @@ function Editor() {
           <div key={k.id} className="col">
             <div className="heading"><div className="big kidName">{k.name}</div></div>
             <div style={{ marginTop: 10 }}>Daily</div>
-            <div className="list">
+            <div className="list" ref={(el) => { listsRef.current[`${k.id}::daily`] = el; }}>
               {(byKid[k.id]?.daily ?? []).map(c => (
-                <div key={c.id}
-                     className={`item ${dragOverId===c.id? 'dragOver':''}`} style={{ gap: 8, cursor: 'grab' }}
-                     draggable
-                     onDragStart={() => setDragId(c.id)}
-                     onDragOver={(e) => { e.preventDefault(); if (dragOverId!==c.id) setDragOverId(c.id); }}
-                     onDragLeave={() => setDragOverId(null)}
-                     onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                     onDrop={() => { if (dragId && dragId!==c.id) reorderLocal(k.id, 'daily', dragId, c.id); setDragId(null); setDragOverId(null); }}>
+                <div key={c.id} data-id={c.id}
+                     className={`item`} style={{ gap: 8, cursor: 'grab' }}>
                   <span style={{ flex: 1 }}>{c.title}</span>
                   <button className="btn" onClick={() => edit(c)}>Edit</button>
                   <button className="btn secondary" onClick={() => remove(c)}>Remove</button>
@@ -212,16 +217,10 @@ function Editor() {
             </div>
             <button className="btn" style={{ marginTop: 8 }} onClick={() => add(k.id, "daily")}>+ Add daily</button>
             <div style={{ marginTop: 16 }}>Weekly</div>
-            <div className="list">
+            <div className="list" ref={(el) => { listsRef.current[`${k.id}::weekly`] = el; }}>
               {(byKid[k.id]?.weekly ?? []).map(c => (
-                <div key={c.id}
-                     className={`item ${dragOverId===c.id? 'dragOver':''}`} style={{ gap: 8, cursor: 'grab' }}
-                     draggable
-                     onDragStart={() => setDragId(c.id)}
-                     onDragOver={(e) => { e.preventDefault(); if (dragOverId!==c.id) setDragOverId(c.id); }}
-                     onDragLeave={() => setDragOverId(null)}
-                     onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                     onDrop={() => { if (dragId && dragId!==c.id) reorderLocal(k.id, 'weekly', dragId, c.id); setDragId(null); setDragOverId(null); }}>
+                <div key={c.id} data-id={c.id}
+                     className={`item`} style={{ gap: 8, cursor: 'grab' }}>
                   <span style={{ flex: 1 }}>{c.title}</span>
                   <button className="btn" onClick={() => edit(c)}>Edit</button>
                   <button className="btn secondary" onClick={() => remove(c)}>Remove</button>

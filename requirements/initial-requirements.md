@@ -30,7 +30,7 @@ Screens
   - Requires entering a 4-digit PIN each time the screen is opened.
   - The PIN field autofocuses when the screen opens, shows numeric keypad on mobile, and auto-submits as soon as the 4th digit is entered.
   - Add, edit, remove chores per child (Daily/Weekly).
-  - Drag-and-drop to reorder chores within each child’s Daily and Weekly sections; order is persisted.
+  - Drag-and-drop to reorder chores within each child’s Daily and Weekly sections; order is persisted. Reordering works on desktop (mouse) and iPad (touch).
   - Adjust global trophy/apple thresholds.
 
 Scoring & time windows
