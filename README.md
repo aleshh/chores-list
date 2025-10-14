@@ -1,3 +1,9 @@
+![Chores app screenshot](docs/chores.png)
+
+Made this chore tracking app for my kids entirely by vibe coding: Codex wrote all the code except the initial requirements file and this paragraph.
+
+<hr>
+
 Chores App (Next.js + Supabase)
 
 What’s included
@@ -9,9 +15,9 @@ What’s included
 
 Getting started
 
-1) Copy `.env.example` to `.env.local` and fill Supabase URL and anon key. Adjust passwords.
-2) Run the SQL in `supabase/migrations/0001_init.sql` in your Supabase project (SQL editor).
-3) `npm install` then `npm run dev`.
+1. Copy `.env.example` to `.env.local` and fill Supabase URL and anon key. Adjust passwords.
+2. Run the SQL in `supabase/migrations/0001_init.sql` in your Supabase project (SQL editor).
+3. `npm install` then `npm run dev`.
 
 Dev mode (no database)
 
@@ -43,16 +49,16 @@ Local environment
 
 Vercel deployment
 
-1) Push this repository to GitHub/GitLab/Bitbucket.
-2) In Vercel, “New Project” → import the repo.
-3) Framework preset: Next.js. Build command: `next build`. Output: auto.
-4) Environment variables (Project Settings → Environment Variables):
+1. Push this repository to GitHub/GitLab/Bitbucket.
+2. In Vercel, “New Project” → import the repo.
+3. Framework preset: Next.js. Build command: `next build`. Output: auto.
+4. Environment variables (Project Settings → Environment Variables):
    - `APP_GLOBAL_PASSWORD`
    - `APP_PARENT_PIN`
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - (optional) `NEXT_PUBLIC_DATA_MODE` (omit or set to `supabase` in production)
-5) Deploy.
+5. Deploy.
 
 Post-deploy
 
