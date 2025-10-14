@@ -44,12 +44,7 @@ export default function ParentPage() {
     await submitPinValue(pin);
   }
 
-  useEffect(() => {
-    if (!ok) {
-      const t = setTimeout(() => inputRef.current?.focus(), 0);
-      return () => clearTimeout(t);
-    }
-  }, [ok]);
+  // Removed programmatic focus to avoid iPad keyboard issues
 
   if (!ok) return (
     <div className="container" style={{ maxWidth: 520 }}>
@@ -64,11 +59,11 @@ export default function ParentPage() {
       <form onSubmit={submitPin} style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <input
           ref={inputRef}
-          autoFocus
           type="tel"
           inputMode="numeric"
           pattern="[0-9]*"
           autoComplete="one-time-code"
+          enterKeyHint="done"
           value={pin}
           onChange={(e)=>{
             const v = e.target.value.replace(/\D/g, '').slice(0,4);
