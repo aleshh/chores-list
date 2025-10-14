@@ -10,11 +10,13 @@ Screens
   - Shows Astrid and Emilia side-by-side. Daily chores above; Weekly chores below.
   - At top, show two circular progress indicators per child: left is today’s completion percent; right is weekly completion percent.
   - Progress rings should animate smoothly when values change (e.g., ease-out over ~700ms), respecting reduced-motion preferences.
+  - Show the current app version (from `package.json`) next to the “Chores list” title.
   - Dynamic font sizing so all tasks fit on the screen without scrolling; both kids use the same font size.
   - Each task has a Lucide checkbox indicator (left of text). When completed:
     - Animate sparkles moving in a left→right sweep across the entire chore row; use the `react-sparkle` library in successive moving bands during the completion state. The final band fades more slowly; the text strike happens just before that final pass.
     - Show a Lucide checkmark briefly, then fade into a random “reward” emoji where the checkbox was. Emoji selection is random each day.
     - Reward emojis are large and can overflow their container slightly, and are not struck through when the text is completed.
+    - Persist the chosen emoji with each completion in the database, so reloading the app shows the same emoji for that event.
   - When a child’s weekly total reaches 100% (all daily chores done every day plus all weekly chores done once), trigger a one-time confetti drop for that week and show a trophy in place of the weekly ring.
   - Top-right actions: a calendar icon toggles the weekly status screen; a gear icon toggles the parent screen.
 
@@ -63,6 +65,11 @@ Typography
   - Title (“Chores list”): Bungee Shade
   - Kid names: Emilys Candy
   - Body/UI: Arvo
+
+Assets & icons
+
+- Place PWA and Apple icons in `public/`: `apple-touch-icon.png` (180×180), `icon-192.png`, `icon-512.png`, plus favicons (16/32/ico).
+- Add explicit `<link rel="apple-touch-icon">` tags for iOS Home Screen.
 
 Developer mode data
 

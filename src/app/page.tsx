@@ -22,7 +22,7 @@ const KIDS = [
 ] as const;
 
 type DoneMap = Record<string, boolean>; // chore_id => done (for today)
-type CheckRow = { id: string; chore_id: string; done_at: string };
+type CheckRow = { id: string; chore_id: string; done_at: string; emoji?: string };
 
 function useChores() {
   const [chores, setChores] = useState<Chore[]>([]);
@@ -202,15 +202,10 @@ function HomeContent() {
       if (isDaily) setTodayMap(m => ({ ...m, [chore.id]: false }));
       await refreshWeekRows();
     } else {
-      await data.insertCheckoff(chore.id, now);
       const reward = randomReward();
+      await data.insertCheckoff(chore.id, now, reward);
       if (isDaily) setTodayMap(m => ({ ...m, [chore.id]: true }));
       await refreshWeekRows();
-      // store emoji for this completion
-      try {
-        const key = isDaily ? `emoji_day_${now.toISOString().slice(0,10)}_${chore.id}` : `emoji_week_${weekKey(now)}_${chore.id}`;
-        localStorage.setItem(key, reward);
-      } catch {}
       // show checkmark briefly then fade to emoji
       const recentKey = `${chore.id}_${isDaily?"d":"w"}`;
       setRecent(r => ({ ...r, [recentKey]: true }));
@@ -259,11 +254,12 @@ function HomeContent() {
                   const done = !!todayMap[c.id];
                   const rkey = `${c.id}_d`;
                   let emoji: string | null = null;
-                  if (done) {
-                    if (!recent[rkey]) {
-                      const k = `emoji_day_${new Date().toISOString().slice(0,10)}_${c.id}`;
-                      emoji = (typeof window !== 'undefined' ? localStorage.getItem(k) : null);
-                    }
+                  if (done && !recent[rkey]) {
+                    // find today's checkoff row for this chore
+                    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+                    const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+                    const row = weekRows.find(r => r.chore_id === c.id && (() => { const d=new Date(r.done_at); return d>=todayStart && d<=todayEnd; })());
+                    emoji = (row?.emoji as string) || null;
                   }
                   return (
                     <button key={c.id} className={`item btn secondary ${done ? "done" : ""} ${recent[rkey] ? 'striking' : ''}`} onClick={(e) => toggle(c, e)}>
@@ -301,11 +297,9 @@ function HomeContent() {
                   const done = weekRows.some(r=>r.chore_id===c.id);
                   const rkey = `${c.id}_w`;
                   let emoji: string | null = null;
-                  if (done) {
-                    if (!recent[rkey]) {
-                      const k = `emoji_week_${weekKey(new Date())}_${c.id}`;
-                      emoji = (typeof window !== 'undefined' ? localStorage.getItem(k) : null);
-                    }
+                  if (done && !recent[rkey]) {
+                    const row = weekRows.find(r => r.chore_id === c.id);
+                    emoji = (row?.emoji as string) || null;
                   }
                   return (
                     <button key={c.id} className={`item btn secondary ${done ? "done" : ""} ${recent[rkey] ? 'striking' : ''}`} onClick={(e) => toggle(c, e)}>

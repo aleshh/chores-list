@@ -28,9 +28,11 @@ Deployment
 Supabase setup
 
 - Create a new project at https://app.supabase.com/.
-- In your project, open SQL editor and run the migration file `supabase/migrations/0001_init.sql` to create the schema (`children`, `chores`, `checkoffs`, `settings`).
-- Get your project URL and anon key from Project Settings → API.
-- No Row Level Security (RLS) required per requirements. Keep tables public for the app to read/write via anon key; access to the app is gated by the app password.
+- In your project, open SQL editor and run the migration files in order:
+  - `supabase/migrations/0001_init.sql`
+  - `supabase/migrations/0002_add_emoji_to_checkoffs.sql` (persists the reward emoji with each completion)
+  - Get your project URL and anon key from Project Settings → API.
+  - No Row Level Security (RLS) required per requirements. Keep tables public for the app to read/write via anon key; access to the app is gated by the app password.
 
 Local environment
 

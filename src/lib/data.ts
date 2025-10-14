@@ -1,8 +1,9 @@
 "use client";
 import { supabase } from "@/lib/supabase";
+import { randomReward } from "@/lib/rewards";
 
 export type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number };
-export type Checkoff = { id: string; chore_id: string; done_at: string };
+export type Checkoff = { id: string; chore_id: string; done_at: string; emoji?: string };
 export type Settings = { trophy_threshold: number; apple_threshold: number };
 
 const MODE = (process.env.NEXT_PUBLIC_DATA_MODE || "supabase").toLowerCase();
@@ -59,14 +60,14 @@ async function seedIfNeeded() {
         const dayDate = new Date(ws); dayDate.setDate(ws.getDate() + d); dayDate.setHours(10,0,0,0);
         for (const c of daily) {
           if (mode === 0 || (mode === 1 && d !== 0) || (mode === 2 && d % 2 === 0)) {
-            checkoffs.push({ id: uuid(), chore_id: c.id, done_at: dayDate.toISOString() });
+            checkoffs.push({ id: uuid(), chore_id: c.id, done_at: dayDate.toISOString(), emoji: randomReward() });
           }
         }
       }
       for (const c of weekly) {
         if (mode !== 2 || weekly.indexOf(c) === 0) {
           const wd = new Date(ws); wd.setDate(ws.getDate() + 2); wd.setHours(12,0,0,0);
-          checkoffs.push({ id: uuid(), chore_id: c.id, done_at: wd.toISOString() });
+          checkoffs.push({ id: uuid(), chore_id: c.id, done_at: wd.toISOString(), emoji: randomReward() });
         }
       }
     }
@@ -109,9 +110,9 @@ const Local = {
     const all = readLS<Checkoff[]>(KEYS.checkoffs, []);
     return all.find(r => r.chore_id === choreId && (new Date(r.done_at) >= from && new Date(r.done_at) <= to)) || null;
   },
-  async insertCheckoff(choreId: string, date: Date): Promise<void> {
+  async insertCheckoff(choreId: string, date: Date, emoji?: string): Promise<void> {
     const all = readLS<Checkoff[]>(KEYS.checkoffs, []);
-    all.push({ id: uuid(), chore_id: choreId, done_at: date.toISOString() });
+    all.push({ id: uuid(), chore_id: choreId, done_at: date.toISOString(), emoji: emoji ?? randomReward() });
     writeLS(KEYS.checkoffs, all);
   },
   async deleteCheckoff(id: string): Promise<void> {
@@ -154,7 +155,7 @@ const Remote = {
   async getCheckoffsInRange(from: Date, to: Date): Promise<Checkoff[]> {
     const { data, error } = await supabase
       .from("checkoffs")
-      .select("id,chore_id,done_at")
+      .select("id,chore_id,done_at,emoji")
       .gte("done_at", from.toISOString())
       .lte("done_at", to.toISOString());
     if (error) throw error;
@@ -163,7 +164,7 @@ const Remote = {
   async getCheckoffsForChores(choreIds: string[], from: Date, to: Date): Promise<Checkoff[]> {
     const { data, error } = await supabase
       .from("checkoffs")
-      .select("id,chore_id,done_at")
+      .select("id,chore_id,done_at,emoji")
       .in("chore_id", choreIds)
       .gte("done_at", from.toISOString())
       .lte("done_at", to.toISOString());
@@ -173,7 +174,7 @@ const Remote = {
   async findCheckoffInRange(choreId: string, from: Date, to: Date): Promise<Checkoff | null> {
     const { data, error } = await supabase
       .from("checkoffs")
-      .select("id,chore_id,done_at")
+      .select("id,chore_id,done_at,emoji")
       .eq("chore_id", choreId)
       .gte("done_at", from.toISOString())
       .lte("done_at", to.toISOString())
@@ -181,8 +182,8 @@ const Remote = {
     if (error) throw error;
     return data && data[0] ? (data[0] as any) : null;
   },
-  async insertCheckoff(choreId: string, date: Date): Promise<void> {
-    const { error } = await supabase.from("checkoffs").insert({ chore_id: choreId, done_at: date.toISOString() });
+  async insertCheckoff(choreId: string, date: Date, emoji?: string): Promise<void> {
+    const { error } = await supabase.from("checkoffs").insert({ chore_id: choreId, done_at: date.toISOString(), emoji: emoji ?? randomReward() });
     if (error) throw error;
   },
   async deleteCheckoff(id: string): Promise<void> {
