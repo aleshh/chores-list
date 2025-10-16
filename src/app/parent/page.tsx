@@ -203,8 +203,8 @@ function Editor() {
             }
           };
           // Let Sortable finish its own cleanup first
-          if (typeof window !== 'undefined' && window.requestAnimationFrame) {
-            requestAnimationFrame(run);
+          if (typeof window !== 'undefined') {
+            window.requestAnimationFrame(run);
           } else {
             setTimeout(run, 16);
           }
