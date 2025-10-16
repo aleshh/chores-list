@@ -124,6 +124,7 @@ function HomeContent() {
   const confettiShownRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [recent, setRecent] = useState<Record<string, boolean>>({}); // key: choreId+type
+  const [emojiCache, setEmojiCache] = useState<Record<string, { date: string; emoji: string }>>({});
   
   // Dynamic font sizing to fit content
   useEffect(() => {
@@ -242,11 +243,18 @@ function HomeContent() {
       const existing = await data.findCheckoffInRange(chore.id, from, to);
       if (existing) {
       // undo
+      // cache today's emoji if exists so re-check uses same one
+      const todayKey = new Date().toISOString().slice(0,10);
+      if ((existing as any)?.emoji) {
+        setEmojiCache(m => ({ ...m, [chore.id]: { date: todayKey, emoji: (existing as any).emoji as string } }));
+      }
       await data.deleteCheckoff(existing.id);
       if (isDaily) setTodayMap(m => ({ ...m, [chore.id]: false }));
       await refreshWeekRows();
     } else {
-      const reward = randomReward();
+      const todayKey = new Date().toISOString().slice(0,10);
+      const cached = emojiCache[chore.id];
+      const reward = cached && cached.date === todayKey ? cached.emoji : randomReward();
       await data.insertCheckoff(chore.id, now, reward);
       if (isDaily) setTodayMap(m => ({ ...m, [chore.id]: true }));
       await refreshWeekRows();
