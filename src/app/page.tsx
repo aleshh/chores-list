@@ -47,28 +47,64 @@ function useDoneMap(chores: Chore[]) {
   const [todayMap, setTodayMap] = useState<DoneMap>({});
   const [weekRows, setWeekRows] = useState<CheckRow[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const todayStart = startOfToday();
-  const todayEnd = endOfToday();
-  const weekStart = startOfWeek();
-  const weekEnd = endOfWeek();
-  useEffect(() => {
-    (async () => {
-      if (chores.length === 0) return;
-      const choreIds = chores.map(c => c.id);
-      try {
-        const rows = await data.getCheckoffsForChores(choreIds, weekStart, weekEnd);
-        const t: DoneMap = {};
-        (rows || []).forEach((row: any) => {
-          const d = new Date(row.done_at);
-          const id = row.chore_id as string;
-          if (d >= todayStart && d <= todayEnd) t[id] = true;
-        });
-        setTodayMap(t);
-        setWeekRows(rows as any);
-      } catch (e: any) { setError(e?.message || String(e)); }
-    })();
+
+  const fetchRows = async () => {
+    if (chores.length === 0) return;
+    const ids = chores.map(c => c.id);
+    const now = new Date();
+    const weekStart = startOfWeek(now);
+    const weekEnd = endOfWeek(now);
+    const tStart = startOfToday();
+    const tEnd = endOfToday();
+    try {
+      const rows = await data.getCheckoffsForChores(ids, weekStart, weekEnd);
+      const t: DoneMap = {};
+      (rows || []).forEach((row: any) => {
+        const d = new Date(row.done_at);
+        if (d >= tStart && d <= tEnd) t[row.chore_id as string] = true;
+      });
+      setTodayMap(t);
+      setWeekRows(rows as any);
+    } catch (e: any) {
+      setError(e?.message || String(e));
+    }
+  };
+
+  // Initial and on-chores-change fetch
+  useEffect(() => { fetchRows();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chores.map(c => c.id).join(",")]);
+
+  // Refresh at local midnight and when the tab/app becomes visible
+  useEffect(() => {
+    let timeout: any;
+    const scheduleMidnight = () => {
+      const now = new Date();
+      const next = new Date(now);
+      next.setDate(now.getDate() + 1);
+      next.setHours(0, 0, 1, 0); // 1s after midnight
+      const ms = +next - +now;
+      timeout = setTimeout(async () => {
+        await fetchRows();
+        scheduleMidnight();
+      }, Math.max(1000, ms));
+    };
+    scheduleMidnight();
+
+    const onVisibility = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') fetchRows();
+    };
+    const onFocus = () => fetchRows();
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisibility);
+    if (typeof window !== 'undefined') window.addEventListener('focus', onFocus);
+    return () => {
+      clearTimeout(timeout);
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibility);
+      if (typeof window !== 'undefined') window.removeEventListener('focus', onFocus);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chores.map(c => c.id).join(",")]);
+
   return { todayMap, setTodayMap, weekRows, setWeekRows, error };
 }
 
