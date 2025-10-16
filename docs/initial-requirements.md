@@ -16,7 +16,7 @@ Screens
     - Show a Lucide checkmark briefly, then fade into a random “reward” emoji where the checkbox was. Emoji selection is random each day.
     - Reward emojis are large and can overflow their container slightly, and are not struck through when the text is completed.
     - Persist the chosen emoji with each completion in the database, so reloading the app shows the same emoji for that event.
-  - When a child’s weekly total reaches 100% (all daily chores done every day plus all weekly chores done once), trigger a one-time confetti drop for that week and show a trophy in place of the weekly ring.
+  - Celebration: when either child completes 100% of their daily tasks for the day, trigger a confetti drop (once per child per day). The weekly ring still shows a trophy when the weekly total reaches 100%.
   - Top-right actions: a calendar icon toggles the weekly status screen; a gear icon toggles the parent screen.
 
 - Progress (Weekly status):

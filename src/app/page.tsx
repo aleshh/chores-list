@@ -193,16 +193,17 @@ function HomeContent() {
   }, [byKid, todayMap, weekRows]);
 
   useEffect(() => {
-    const wk = weekKey(new Date());
+    // Celebrate when a child completes 100% of daily tasks (once per child per day)
+    const dayKey = new Date().toISOString().slice(0, 10);
     for (const s of summary) {
-      if (s.weekPct >= 1) {
-        const key = `confetti_week_${s.id}`;
+      if (s.dayPct >= 1) {
+        const key = `confetti_day_${s.id}`;
         const last = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
-        if (last !== wk && !confettiShownRef.current) {
+        if (last !== dayKey && !confettiShownRef.current) {
           confettiShownRef.current = true;
           setShowConfetti(true);
           const t = setTimeout(() => setShowConfetti(false), 3000);
-          if (typeof window !== 'undefined') localStorage.setItem(key, wk);
+          if (typeof window !== 'undefined') localStorage.setItem(key, dayKey);
           return () => clearTimeout(t);
         }
       }
