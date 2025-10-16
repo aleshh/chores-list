@@ -6,6 +6,8 @@ body{
   color: var(--fg);
   font-family: var(--font-arvo), ui-rounded, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
 }
+/* Ensure form controls inherit the app font (iOS Safari defaults to system UI) */
+button, input, select, textarea { font: inherit; }
 a{ color: inherit; text-decoration: none; }
 *{ box-sizing: border-box; }
 
