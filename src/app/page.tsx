@@ -9,7 +9,7 @@ import { randomReward } from "@/lib/rewards";
 import { Calendar, Settings, Circle, Check } from "lucide-react";
 import Sparkle from "react-sparkle";
 
-type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number };
+type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number; day_part?: 'morning'|'evening'|null };
 
 const KIDS = [
   { id: "astrid", name: "Astrid" },
