@@ -2,7 +2,7 @@
 import { supabase } from "@/lib/supabase";
 import { randomReward } from "@/lib/rewards";
 
-export type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number };
+export type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number; day_part?: 'morning' | 'evening' | null };
 export type Checkoff = { id: string; chore_id: string; done_at: string; emoji?: string };
 export type Settings = { trophy_threshold: number; apple_threshold: number };
 
@@ -83,12 +83,12 @@ const Local = {
     const all = readLS<Chore[]>(KEYS.chores, []);
     return all.filter(c => c.active !== false).sort((a,b) => a.position - b.position);
   },
-  async addChore(input: Pick<Chore, "title"|"type"|"child_id"|"position">): Promise<void> {
+  async addChore(input: Pick<Chore, "title"|"type"|"child_id"|"position"> & Partial<Pick<Chore,'day_part'>>): Promise<void> {
     const all = readLS<Chore[]>(KEYS.chores, []);
-    const item: Chore = { id: uuid(), active: true, ...input } as Chore;
+    const item: Chore = { id: uuid(), active: true, day_part: input.type === 'daily' ? (input.day_part ?? 'morning') : null, title: input.title, type: input.type, child_id: input.child_id, position: input.position } as Chore;
     all.push(item); writeLS(KEYS.chores, all);
   },
-  async updateChore(id: string, updates: Partial<Pick<Chore, "title"|"position"|"active">>): Promise<void> {
+  async updateChore(id: string, updates: Partial<Pick<Chore, "title"|"position"|"active"|"day_part">>): Promise<void> {
     const all = readLS<Chore[]>(KEYS.chores, []);
     const idx = all.findIndex(c => c.id === id); if (idx >= 0) { all[idx] = { ...all[idx], ...updates }; writeLS(KEYS.chores, all); }
   },
@@ -125,17 +125,19 @@ const Remote = {
   async getActiveChores(): Promise<Chore[]> {
     const { data, error } = await supabase
       .from("chores")
-      .select("id,title,type,child_id,active,position")
+      .select("id,title,type,child_id,active,position,day_part")
       .eq("active", true)
       .order("position", { ascending: true });
     if (error) throw error;
     return data as any;
   },
-  async addChore(input: Pick<Chore, "title"|"type"|"child_id"|"position">): Promise<void> {
-    const { error } = await supabase.from("chores").insert({ ...input, active: true });
+  async addChore(input: Pick<Chore, "title"|"type"|"child_id"|"position"> & Partial<Pick<Chore,'day_part'>>): Promise<void> {
+    const payload: any = { ...input, active: true };
+    if (input.type === 'daily') payload.day_part = input.day_part ?? 'morning';
+    const { error } = await supabase.from("chores").insert(payload);
     if (error) throw error;
   },
-  async updateChore(id: string, updates: Partial<Pick<Chore, "title"|"position"|"active">>): Promise<void> {
+  async updateChore(id: string, updates: Partial<Pick<Chore, "title"|"position"|"active"|"day_part">>): Promise<void> {
     const { error } = await supabase.from("chores").update(updates).eq("id", id);
     if (error) throw error;
   },

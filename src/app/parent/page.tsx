@@ -6,7 +6,7 @@ import Sortable from "sortablejs";
 
 // Always require PIN entry per visit
 
-type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number };
+type Chore = { id: string; title: string; type: "daily" | "weekly"; child_id: string; active: boolean; position: number; day_part?: 'morning'|'evening'|null };
 const KIDS = [
   { id: "astrid", name: "Astrid" },
   { id: "emilia", name: "Emilia" }
@@ -90,15 +90,26 @@ function Editor() {
   const sortables = useRef<Record<string, Sortable | null>>({});
 
   const byKid = useMemo(() => {
-    const map: Record<string, { daily: Chore[]; weekly: Chore[] }> = {} as any;
-    for (const k of KIDS) map[k.id] = { daily: [], weekly: [] };
+    const map: Record<string, { daily: Chore[]; weekly: Chore[]; morning: Chore[]; evening: Chore[]; unspecified: Chore[] }> = {} as any;
+    for (const k of KIDS) map[k.id] = { daily: [], weekly: [], morning: [], evening: [], unspecified: [] } as any;
     for (const c of chores) {
-      (map as any)[c.child_id][c.type].push(c);
+      const bucket = map[c.child_id];
+      if (!bucket) continue;
+      if (c.type === 'daily') {
+        bucket.daily.push(c);
+        const part = (c.day_part as any) || 'unspecified';
+        (bucket as any)[part].push(c);
+      } else {
+        bucket.weekly.push(c);
+      }
     }
-    // ensure lists display sorted by position
     for (const k of KIDS) {
-      map[k.id].daily.sort((a,b)=>a.position-b.position);
-      map[k.id].weekly.sort((a,b)=>a.position-b.position);
+      const b = map[k.id];
+      b.daily.sort((a,b)=>a.position-b.position);
+      b.weekly.sort((a,b)=>a.position-b.position);
+      b.morning.sort((a,b)=>a.position-b.position);
+      b.evening.sort((a,b)=>a.position-b.position);
+      b.unspecified.sort((a,b)=>a.position-b.position);
     }
     return map;
   }, [chores]);
@@ -125,6 +136,23 @@ function Editor() {
     })();
   }
 
+  async function applyNewDailyOrder(kid: string, morningIds: string[], eveningIds: string[], unspecifiedIds: string[]) {
+    // assign positions within each part starting at 1
+    const updates: { id: string; position: number; day_part: 'morning'|'evening'|null }[] = [];
+    morningIds.forEach((id, idx) => updates.push({ id, position: idx + 1, day_part: 'morning' }));
+    eveningIds.forEach((id, idx) => updates.push({ id, position: idx + 1, day_part: 'evening' }));
+    unspecifiedIds.forEach((id, idx) => updates.push({ id, position: idx + 1, day_part: null }));
+    setChores(prev => prev.map(c => {
+      if (c.child_id!==kid || c.type!== 'daily') return c;
+      const u = updates.find(x => x.id === c.id);
+      return u ? { ...c, position: u.position, day_part: u.day_part } : c;
+    }));
+    for (const u of updates) {
+      try { await data.updateChore(u.id, { position: u.position, day_part: u.day_part }); } catch {}
+    }
+    setStatus("Order saved");
+  }
+
   useEffect(() => {
     // Initialize Sortable on each list container; supports touch (iPad) and mouse
     const keys = Object.keys(listsRef.current);
@@ -132,13 +160,54 @@ function Editor() {
       const el = listsRef.current[key];
       if (!el || sortables.current[key]) continue;
       const [kid, type] = key.split("::");
+      const isDaily = type.startsWith('daily');
       sortables.current[key] = Sortable.create(el, {
-        animation: 120,
+        animation: 0,
         ghostClass: "dragOver",
         handle: undefined,
-        onEnd: () => {
-          const ids = Array.from(el.children).map((ch: any) => ch?.dataset?.id).filter(Boolean) as string[];
-          applyNewOrder(kid, type as any, ids);
+        draggable: ".item",
+        forceFallback: true, // improve iOS Safari behavior
+        fallbackOnBody: true,
+        removeCloneOnHide: false,
+        direction: 'vertical',
+        fallbackTolerance: 3,
+        group: isDaily ? { name: `${kid}-daily`, pull: true, put: true } : undefined,
+        onEnd: (evt: any) => {
+          const run = () => {
+            if (isDaily) {
+              // Capture intended lists before restoring DOM, so we keep the target placement
+              const mEl = listsRef.current[`${kid}::daily_morning`];
+              const eEl = listsRef.current[`${kid}::daily_evening`];
+              const uEl = listsRef.current[`${kid}::daily_unspecified`];
+              const morningIdsNow = mEl ? Array.from(mEl.children).map((ch: any) => ch?.dataset?.id).filter(Boolean) as string[] : [];
+              const eveningIdsNow = eEl ? Array.from(eEl.children).map((ch: any) => ch?.dataset?.id).filter(Boolean) as string[] : [];
+              const unspecifiedIdsNow = uEl ? Array.from(uEl.children).map((ch: any) => ch?.dataset?.id).filter(Boolean) as string[] : [];
+
+              // Restore DOM to original to avoid React/Sorable conflict; React will own the move
+              try {
+                if (evt && evt.from && evt.to && evt.from !== evt.to && evt.item) {
+                  const fromEl: HTMLElement = evt.from;
+                  const itemEl: HTMLElement = evt.item;
+                  fromEl.appendChild(itemEl);
+                }
+              } catch {}
+
+              // Defer state update slightly (after Sortable cleanup)
+              setTimeout(() => {
+                applyNewDailyOrder(kid, morningIdsNow, eveningIdsNow, unspecifiedIdsNow);
+              }, 0);
+            } else {
+              // Weekly: single list reorder
+              const ids = Array.from(el.children).map((ch: any) => ch?.dataset?.id).filter(Boolean) as string[];
+              setTimeout(() => applyNewOrder(kid, type as any, ids), 0);
+            }
+          };
+          // Let Sortable finish its own cleanup first
+          if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+            requestAnimationFrame(run);
+          } else {
+            setTimeout(run, 16);
+          }
         }
       });
     }
@@ -154,7 +223,9 @@ function Editor() {
     const title = prompt("Chore title?");
     if (!title) return;
     const position = (chores.filter(c => c.child_id === kid && c.type === type).sort((a,b)=>a.position-b.position).at(-1)?.position ?? 0) + 1;
-    try { await data.addChore({ title, type, child_id: kid, position }); }
+    const payload: any = { title, type, child_id: kid, position };
+    if (type === 'daily') payload.day_part = 'morning';
+    try { await data.addChore(payload); }
     catch (e: any) { return setStatus(`Error: ${e?.message || e}`); }
     setStatus("Added");
     load();
@@ -197,9 +268,9 @@ function Editor() {
         {KIDS.map(k => (
           <div key={k.id} className="col">
             <div className="heading"><div className="big kidName">{k.name}</div></div>
-            <div style={{ marginTop: 10 }}>Daily</div>
-            <div className="list" ref={(el) => { listsRef.current[`${k.id}::daily`] = el; }}>
-              {(byKid[k.id]?.daily ?? []).map(c => (
+            <div style={{ marginTop: 10 }}>Daily — Morning</div>
+            <div className="list" ref={(el) => { listsRef.current[`${k.id}::daily_morning`] = el; }}>
+              {(byKid[k.id]?.morning ?? []).map(c => (
                 <div key={c.id} data-id={c.id}
                      className={`item`} style={{ gap: 8, cursor: 'grab' }}>
                   <span style={{ flex: 1 }}>{c.title}</span>
@@ -208,6 +279,32 @@ function Editor() {
                 </div>
               ))}
             </div>
+            <div style={{ marginTop: 10 }}>Daily — Evening</div>
+            <div className="list" ref={(el) => { listsRef.current[`${k.id}::daily_evening`] = el; }}>
+              {(byKid[k.id]?.evening ?? []).map(c => (
+                <div key={c.id} data-id={c.id}
+                     className={`item`} style={{ gap: 8, cursor: 'grab' }}>
+                  <span style={{ flex: 1 }}>{c.title}</span>
+                  <button className="btn" onClick={() => edit(c)}>Edit</button>
+                  <button className="btn secondary" onClick={() => remove(c)}>Remove</button>
+                </div>
+              ))}
+            </div>
+            {(byKid[k.id]?.unspecified?.length ?? 0) > 0 && (
+              <>
+                <div style={{ marginTop: 10 }}>Daily — Unspecified</div>
+                <div className="list" ref={(el) => { listsRef.current[`${k.id}::daily_unspecified`] = el; }}>
+                  {(byKid[k.id]?.unspecified ?? []).map(c => (
+                    <div key={c.id} data-id={c.id}
+                         className={`item`} style={{ gap: 8, cursor: 'grab' }}>
+                      <span style={{ flex: 1 }}>{c.title}</span>
+                      <button className="btn" onClick={() => edit(c)}>Edit</button>
+                      <button className="btn secondary" onClick={() => remove(c)}>Remove</button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
             <button className="btn" style={{ marginTop: 8 }} onClick={() => add(k.id, "daily")}>+ Add daily</button>
             <div style={{ marginTop: 16 }}>Weekly</div>
             <div className="list" ref={(el) => { listsRef.current[`${k.id}::weekly`] = el; }}>

@@ -149,12 +149,24 @@ function HomeContent() {
   }, [chores]);
 
   const byKid = useMemo(() => {
-    const map: Record<string, { daily: Chore[]; weekly: Chore[] }> = {};
-    for (const kid of KIDS) map[kid.id] = { daily: [], weekly: [] };
+    const map: Record<string, { daily: Chore[]; weekly: Chore[]; morning: Chore[]; evening: Chore[]; unspecified: Chore[] }> = {} as any;
+    for (const kid of KIDS) map[kid.id] = { daily: [], weekly: [], morning: [], evening: [], unspecified: [] } as any;
     for (const c of chores) {
       if (!(c.child_id in map)) continue;
-      if (c.type === "daily") map[c.child_id].daily.push(c);
-      else map[c.child_id].weekly.push(c);
+      if (c.type === "daily") {
+        map[c.child_id].daily.push(c);
+        const part = (c.day_part as any) || 'unspecified';
+        (map[c.child_id] as any)[part].push(c);
+      } else map[c.child_id].weekly.push(c);
+    }
+    // sort each bucket by position
+    for (const kid of KIDS) {
+      const k = map[kid.id];
+      k.daily.sort((a,b)=>a.position-b.position);
+      k.weekly.sort((a,b)=>a.position-b.position);
+      k.morning.sort((a,b)=>a.position-b.position);
+      k.evening.sort((a,b)=>a.position-b.position);
+      k.unspecified.sort((a,b)=>a.position-b.position);
     }
     return map;
   }, [chores]);
@@ -263,6 +275,7 @@ function HomeContent() {
           const kidChores = byKid[k.id];
           const sum = summary.find(s => s.id === k.id)!;
           const weeklyDone = sum.weekPct >= 1;
+          const morningList = (kidChores.morning || []).concat(kidChores.unspecified || []);
           return (
             <div key={k.id} className="col">
               <div className="heading">
@@ -277,9 +290,9 @@ function HomeContent() {
                 </div>
               </div>
 
-              <div style={{ marginTop: 8 }}>Daily</div>
+              <div style={{ marginTop: 8 }}>Morning</div>
               <div className="list">
-                {kidChores.daily.map(c => {
+                {morningList.map(c => {
                   const done = !!todayMap[c.id];
                   const rkey = `${c.id}_d`;
                   let emoji: string | null = null;
@@ -317,7 +330,49 @@ function HomeContent() {
                     </button>
                   );
                 })}
-                {kidChores.daily.length === 0 && <div className="muted">No daily chores yet</div>}
+                {morningList.length === 0 && <div className="muted">No morning chores</div>}
+              </div>
+
+              <div style={{ marginTop: 10 }}>Evening</div>
+              <div className="list">
+                {kidChores.evening.map(c => {
+                  const done = !!todayMap[c.id];
+                  const rkey = `${c.id}_d`;
+                  let emoji: string | null = null;
+                  if (done && !recent[rkey]) {
+                    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+                    const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+                    const row = weekRows.find(r => r.chore_id === c.id && (() => { const d=new Date(r.done_at); return d>=todayStart && d<=todayEnd; })());
+                    emoji = (row?.emoji as string) || null;
+                  }
+                  return (
+                    <button key={c.id} className={`item btn secondary ${done ? "done" : ""} ${recent[rkey] ? 'striking' : ''}`} onClick={(e) => toggle(c, e)}>
+                      <span className={`leftIcon ${emoji ? 'reward':''}`}>
+                        {done ? (recent[rkey] ? <Check color="#fff" size={22} /> : (emoji || "✔︎")) : <Circle color="#fff" size={22} />}
+                      </span>
+                      <span className="taskText textWrap">
+                        {c.title}
+                      </span>
+                      {recent[rkey] && (
+                        <span className="sparkle-sweep" aria-hidden>
+                          <span className="sparkle-band">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={45} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay1">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={45} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay2">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={40} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={18} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                          <span className="sparkle-band delay3">
+                            <Sparkle color={["#fff", "#fff", "#FFEB3B", "#FFE082"]} count={36} minSize={6} maxSize={14} overflowPx={14} fadeOutSpeed={40} newSparkleOnFadeOut flicker flickerSpeed="fastest" />
+                          </span>
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+                {kidChores.evening.length === 0 && <div className="muted">No evening chores</div>}
               </div>
 
               <div style={{ marginTop: 14 }}>Weekly</div>
